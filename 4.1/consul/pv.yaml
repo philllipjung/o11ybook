@@ -1,0 +1,36 @@
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  annotations:
+    hostPathProvisionerIdentity: 278f8983-aec3-4b0d-ac10-d1f45952e7d9
+    pv.kubernetes.io/provisioned-by: k8s.io/minikube-hostpath
+  creationTimestamp: "2022-05-17T01:14:58Z"
+  finalizers:
+  - kubernetes.io/pv-protection
+  name: pvc-8f085ebe-e13b-417d-be19-bac152480c78
+  resourceVersion: "557"
+  uid: b22502e1-93d1-468c-9a2e-765af5eb63e1
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 100Mi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: consul-claim0
+    namespace: default
+    resourceVersion: "540"
+    uid: 8f085ebe-e13b-417d-be19-bac152480c78
+  hostPath:
+    path: /tmp/hostpath-provisioner/default/consul-claim0
+    type: ""
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: standard
+  volumeMode: Filesystem
+status:
+  phase: Bound

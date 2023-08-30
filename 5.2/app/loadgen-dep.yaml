@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgen
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: loadgen
+  template:
+    metadata:
+      labels:
+        name: loadgen
+    spec:
+      containers:
+      - name: loadgen
+        image: grafana/tns-loadgen:latest
+        imagePullPolicy: IfNotPresent
+        args:
+        - -log.level=debug
+        - http://app
+        ports:
+        - name: http-metrics
+          containerPort: 80
+        env:
+        - name: JAEGER_AGENT_HOST
+          value: tempo.default.svc.cluster.local
+        - name: JAEGER_TAGS
+          value: cluster=docker,namespace=default
+        - name: JAEGER_SAMPLER_TYPE
+          value: const
+        - name: JAEGER_SAMPLER_PARAM
+          value: "1"

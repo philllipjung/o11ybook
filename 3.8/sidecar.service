@@ -1,0 +1,16 @@
+[Unit]
+Description=Prometheus
+Wants=network-online.target
+After=network-online.target
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+ExecStart=/bin/thanos sidecar \
+    --prometheus.url=http://localhost:9090 \
+    --grpc-address=localhost:10901 \
+    --http-address=localhost:10902 \
+    --tsdb.path /var/lib/prometheus/ \
+    --objstore.config-file /etc/prometheus/bucket.yml
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: otel-collector
+data:
+  otel-collector-config.yml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:55680
+            
+    exporters:
+      otlp/data-prepper:
+        endpoint: data-prepper.monitoring.svc.cluster.local:21890
+        tls:
+          insecure: true
+      logging:
+      
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [otlp/data-prepper, logging]

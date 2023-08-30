@@ -1,0 +1,15 @@
+[Unit]
+Description=Thnaos Store
+Wants=network-online.target
+After=network-online.target
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/bin/thanos store \
+       --data-dir=/var/lib/prometheus-store/ \
+       --objstore.config-file=/etc/prometheus/bucket.yml \
+       --http-address=localhost:10906 \
+       --grpc-address=localhost:10905
+[Install]
+WantedBy=multi-user.target

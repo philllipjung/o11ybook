@@ -1,0 +1,16 @@
+[Unit]
+Description=Thnaos Query
+Wants=network-online.target
+After=network-online.target
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/bin/thanos query \
+     --http-address=0.0.0.0:29090 \
+     --grpc-address=localhost:10903 \
+     --store=localhost:10901 \
+     --query.replica-label prometheus-1
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yaml
+    kompose.version: 1.26.1 (a9d05d509)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: consul
+  name: consul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: consul
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yaml
+        kompose.version: 1.26.1 (a9d05d509)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: consul
+    spec:
+      containers:
+        - args:
+            - agent
+            - -log-level=info
+            - -dev
+            - -ui
+            - -client
+            - 0.0.0.0
+          image: consul:1.9
+          name: consul
+          ports:
+            - containerPort: 8500
+          resources: {}
+          volumeMounts:
+            - mountPath: /consul/config
+              name: consul-claim0
+            - mountPath: /consul/data
+              name: consul-claim1
+      restartPolicy: Always
+      volumes:
+        - name: consul-claim0
+          persistentVolumeClaim:
+            claimName: consul-claim0
+        - name: consul-claim1
+          persistentVolumeClaim:
+            claimName: consul-claim1
+status: {}
+

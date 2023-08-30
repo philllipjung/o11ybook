@@ -1,0 +1,164 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data-prepper
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: data-prepper
+  name: data-prepper-config
+  namespace: data-prepper
+data:
+  pipelines.yaml: |
+    entry-pipeline:
+      delay: "100"
+      source:
+        otel_trace_source:
+          ssl: false
+      sink:
+        - pipeline:
+            name: "raw-pipeline"
+        - pipeline:
+            name: "service-map-pipeline"
+    raw-pipeline:
+      source:
+        pipeline:
+          name: "entry-pipeline"
+      processor:
+        - otel_trace_raw:
+      sink:
+        - opensearch:
+            hosts: [ "https://__AOS_ENDPOINT__" ]
+            username: "__AOS_USERNAME__"
+            password: "__AOS_PASSWORD__"
+            index_type: trace-analytics-raw
+    service-map-pipeline:
+      delay: "100"
+      source:
+        pipeline:
+          name: "entry-pipeline"
+      processor:
+        - service_map_stateful:
+      sink:
+        - opensearch:
+            hosts: [ "https://__AOS_ENDPOINT__" ]
+            username: "__AOS_USERNAME__"
+            password: "__AOS_PASSWORD__"
+            index_type: trace-analytics-service-map
+    log-pipeline:
+      source:
+        http:
+          ssl: false
+          authentication:
+            unauthenticated:
+      processor:
+        - grok:
+            match:
+              # This will match logs with a "log" key against the COMMONAPACHELOG pattern (ex: { "log": "actual apache log..." } )
+              # You should change this to match what your logs look like. See the grok documenation to get started.
+              log: [ "%{COMMONAPACHELOG}" ]
+      sink:
+        - opensearch:
+            hosts: [ "https://__AOS_ENDPOINT__" ]
+            username: "__AOS_USERNAME__"
+            password: "__AOS_PASSWORD__"
+            index: sample_app_logs
+  data-prepper-config.yaml: |
+    ssl: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: data-prepper
+  name: data-prepper
+  namespace: data-prepper
+spec:
+  type: NodePort
+  ports:
+    - name: "21890"
+      port: 21890
+      targetPort: 21890
+    - name: "2021" # Port for http source communication
+      port: 2021
+      targetPort: 2021
+  selector:
+    app: data-prepper
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: data-prepper
+  name: data-prepper-metrics
+  namespace: data-prepper
+spec:
+  type: NodePort
+  ports:
+    - name: "4900"
+      port: 4900
+      targetPort: 4900
+  selector:
+    app: data-prepper
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: data-prepper
+  name: data-prepper
+  namespace: data-prepper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-prepper
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: data-prepper
+    spec:
+      containers:
+        - image: opensearchproject/data-prepper:latest
+          name: data-prepper
+          ports:
+            - containerPort: 21890
+              protocol: TCP
+            - containerPort: 2021 # Port for http source communication
+              protocol: TCP
+          resources: {}
+          volumeMounts:
+            - name: prepper-configmap-config
+              mountPath: /usr/share/data-prepper/config/data-prepper-config.yaml
+              subPath: data-prepper-config.yaml
+
+            - name: prepper-configmap-pipelines
+              mountPath: /usr/share/data-prepper/pipelines/pipelines.yaml
+              subPath: pipelines.yaml
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+        - name: prepper-configmap-config
+          configMap:
+            name: data-prepper-config
+            items:
+              - key: data-prepper-config.yaml
+                path: data-prepper-config.yaml
+
+        - name: prepper-configmap-pipelines
+          configMap:
+            name: data-prepper-config
+            items:
+              - key: pipelines.yaml
+                path: pipelines.yaml
+status: {}
+---
+

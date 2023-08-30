@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yaml
+    kompose.version: 1.26.1 (a9d05d509)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: minio
+  name: minio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: minio
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yaml
+        kompose.version: 1.26.1 (a9d05d509)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: minio
+    spec:
+      containers:
+        - args:
+            - server
+            - --console-address
+            - :9001
+            - /export
+          env:
+            - name: MINIO_ACCESS_KEY
+              value: 697d0993dd097f38d5b8
+            - name: MINIO_SECRET_KEY
+              value: 9f88738761b57c63f6a81bdfd471
+          image: minio/minio:latest
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:9000/minio/health/live
+            failureThreshold: 3
+            periodSeconds: 30
+            timeoutSeconds: 20
+          name: minio
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+          resources: {}
+          volumeMounts:
+            - mountPath: /export
+              name: minio-claim0
+      restartPolicy: Always
+      volumes:
+        - name: minio-claim0
+          persistentVolumeClaim:
+            claimName: minio-claim0
+status: {}

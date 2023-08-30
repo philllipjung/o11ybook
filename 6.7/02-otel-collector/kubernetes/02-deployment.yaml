@@ -1,0 +1,40 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: otel-collector
+  name: otel-collector
+  namespace: otel-collector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+        - image: amazon/aws-otel-collector:latest
+          name: otel-collector
+          ports:
+            - containerPort: 55680
+          resources: # Verify the amount of requests
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          command: ["/awscollector"]
+          args: ["--config=/etc/otel-collector-config.yml"]
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/otel-collector-config.yml
+              subPath: otel-collector-config.yml
+      volumes:
+        - name: config-volume
+          configMap:
+            name: otel-collector-config
